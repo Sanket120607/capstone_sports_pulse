@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SportPulse India - Live Sports News</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="SportPulse home">
+        <span class="brand-mark">SP</span>
+        <span>SportPulse India</span>
+      </a>
+
+      <nav class="desktop-nav" aria-label="Sports categories">
+        <button class="nav-pill active" data-category="All">All</button>
+        <button class="nav-pill" data-category="Football">Football</button>
+        <button class="nav-pill" data-category="Cricket">Cricket</button>
+        <button class="nav-pill" data-category="Hockey">Hockey</button>
+        <button class="nav-pill" data-category="Badminton">Badminton</button>
+        <button class="nav-pill" data-category="Kabaddi">Kabaddi</button>
+        <button class="nav-pill" data-category="Tennis">Tennis</button>
+        <button class="nav-pill" data-category="Formula 1">Formula 1</button>
+        <button class="nav-pill" data-view="tables">Points Tables</button>
+        <button class="nav-pill" data-view="chat">Sports Chat</button>
+      </nav>
+
+      <button class="icon-button" id="themeToggle" aria-label="Toggle theme" title="Toggle theme">
+        <span aria-hidden="true">Theme</span>
+      </button>
+
+      <label class="language-select">
+        <span>Language</span>
+        <select id="languageSelect" aria-label="Choose language">
+          <option value="en">English</option>
+          <option value="hi">हिन्दी</option>
+        </select>
+      </label>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="pageTitle">
+        <div class="hero-copy">
+          <p class="eyebrow" data-i18n="heroEyebrow">India sports wire</p>
+          <h1 id="pageTitle" data-i18n="heroTitle">India's live sports pulse, in one place.</h1>
+          <p data-i18n="heroText">
+            Track cricket, football, hockey, badminton, kabaddi, tennis, and motorsport headlines
+            from an India-first sports newsroom.
+          </p>
+        </div>
+
+        <aside class="scoreboard" aria-label="Live feed summary">
+          <div class="scoreboard-header">
+            <span>India Watch</span>
+            <strong id="liveClock">--:--</strong>
+          </div>
+          <div id="liveSummaryRows"></div>
+        </aside>
+      </section>
+
+      <section class="ticker" aria-label="Breaking news ticker">
+        <strong data-i18n="breaking">Breaking</strong>
+        <div class="ticker-track">
+          <span id="tickerText"></span>
+        </div>
+      </section>
+
+      <section class="controls" aria-label="News filters">
+        <div class="mobile-categories" role="group" aria-label="Choose category">
+          <button class="chip active" data-category="All">All</button>
+          <button class="chip" data-category="Football">Football</button>
+          <button class="chip" data-category="Cricket">Cricket</button>
+          <button class="chip" data-category="Hockey">Hockey</button>
+          <button class="chip" data-category="Badminton">Badminton</button>
+          <button class="chip" data-category="Kabaddi">Kabaddi</button>
+          <button class="chip" data-category="Tennis">Tennis</button>
+          <button class="chip" data-category="Formula 1">Formula 1</button>
+          <button class="chip" data-view="tables">Points Tables</button>
+          <button class="chip" data-view="chat">Sports Chat</button>
+        </div>
+
+        <label class="search-wrap">
+          <span data-i18n="search">Search</span>
+          <input id="searchInput" type="search" placeholder="Search India, IPL, ISL, players" data-i18n-placeholder="searchPlaceholder" />
+        </label>
+
+        <button class="refresh-button" id="refreshButton" type="button" data-i18n="refreshFeed">Refresh feed</button>
+      </section>
+
+      <section class="content-grid">
+        <section class="lead-panel" aria-labelledby="topStoryTitle">
+          <article class="lead-story" id="leadStory"></article>
+        </section>
+
+        <aside class="side-panel" aria-labelledby="trendingTitle">
+          <div class="panel-heading">
+            <h2 id="trendingTitle">Trending</h2>
+            <span>Updated live</span>
+          </div>
+          <div id="trendingList" class="trending-list"></div>
+        </aside>
+      </section>
+
+      <section class="tables-section is-hidden" id="tablesSection" aria-labelledby="tablesTitle">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow" data-i18n="standings">Standings</p>
+            <h2 id="tablesTitle" data-i18n="pointsTables">Points Tables</h2>
+          </div>
+          <a id="tableSourceLink" class="source-link" href="#" target="_blank" rel="noopener">
+            <span data-i18n="openFullTable">Open full table</span>
+          </a>
+        </div>
+
+        <div class="table-tabs" id="tableTabs" role="tablist" aria-label="Tournament tables"></div>
+
+        <div class="standings-card">
+          <div class="standings-header">
+            <div>
+              <h3 id="activeTableTitle"></h3>
+              <p id="activeTableMeta"></p>
+            </div>
+          </div>
+          <div class="standings-scroll">
+            <table class="standings-table">
+              <thead id="standingsHead"></thead>
+              <tbody id="standingsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="chat-section is-hidden" id="chatSection" aria-labelledby="chatTitle">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow" data-i18n="assistantEyebrow">Sports assistant</p>
+            <h2 id="chatTitle" data-i18n="sportsChat">Sports Chat</h2>
+          </div>
+          <span class="chat-status" id="chatStatus" data-i18n="chatReady">
+            Ask about Indian sports, teams, players, points tables, and current headlines.
+          </span>
+        </div>
+
+        <div class="chat-shell">
+          <div class="chat-messages" id="chatMessages" aria-live="polite"></div>
+          <form class="chat-form" id="chatForm">
+            <label class="chat-input-wrap">
+              <span data-i18n="chatLabel">Your question</span>
+              <textarea
+                id="chatInput"
+                rows="3"
+                placeholder="Ask about IPL, ISL, Indian athletes, standings, or today's headlines"
+                data-i18n-placeholder="chatPlaceholder"
+              ></textarea>
+            </label>
+            <button class="chat-submit" type="submit" data-i18n="askButton">Ask</button>
+          </form>
+        </div>
+      </section>
+
+      <section class="news-section" aria-labelledby="latestTitle">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow" data-i18n="latestFeed">Latest feed</p>
+            <h2 id="latestTitle">All Sports News</h2>
+          </div>
+          <div class="feed-meta">
+            <span id="feedStatus">Connecting to live feeds...</span>
+            <span id="resultCount"></span>
+          </div>
+        </div>
+        <div id="newsGrid" class="news-grid"></div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
