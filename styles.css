@@ -684,14 +684,37 @@ button.score-row:focus-visible {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-2) 22%, transparent);
 }
 
-.chat-submit {
+.chat-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.chat-submit,
+.voice-button {
   min-height: 48px;
   border: 0;
   border-radius: 8px;
-  background: var(--accent);
-  color: #ffffff;
   padding: 0 22px;
   font-weight: 900;
+}
+
+.chat-submit {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.voice-button {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.voice-button.listening {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 .feed-meta {
@@ -860,5 +883,9 @@ button.score-row:focus-visible {
 
   .chat-submit {
     justify-self: start;
+  }
+
+  .chat-actions {
+    justify-content: flex-start;
   }
 }

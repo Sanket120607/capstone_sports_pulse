@@ -96,9 +96,15 @@ const translations = {
     chatLabel: "Your question",
     chatPlaceholder: "Ask about IPL, ISL, Indian athletes, standings, or today's headlines",
     askButton: "Ask",
+    voiceButtonTitle: "Ask by voice",
+    speakToggleTitle: "Toggle voice answer",
+    listening: "Listening...",
+    voiceUnsupported: "Voice input is not supported in this browser. Try Chrome or Edge.",
+    voiceOn: "Voice",
+    voiceOff: "Muted",
     thinking: "Thinking...",
     setupNeeded:
-      "Groq API key is not configured. Add GROQ_API_KEY as an environment variable before starting the server.",
+      "Groq API key is not configured. Set GROQ_API_KEY before starting the server.",
     chatError: "I could not get a response right now. Please try again in a moment.",
   },
   hi: {
@@ -134,9 +140,15 @@ const translations = {
     chatLabel: "आपका सवाल",
     chatPlaceholder: "IPL, ISL, भारतीय खिलाड़ियों, स्टैंडिंग या आज की खबरों पर पूछें",
     askButton: "पूछें",
+    voiceButtonTitle: "आवाज़ से पूछें",
+    speakToggleTitle: "आवाज़ में जवाब चालू/बंद करें",
+    listening: "सुन रहा है...",
+    voiceUnsupported: "इस ब्राउज़र में voice input समर्थित नहीं है। Chrome या Edge आज़माएं।",
+    voiceOn: "आवाज़",
+    voiceOff: "बंद",
     thinking: "सोच रहा है...",
     setupNeeded:
-      "Groq API key सेट नहीं है। सर्वर शुरू करने से पहले GROQ_API_KEY environment variable जोड़ें।",
+      "Groq API key सेट नहीं है। Server start करने से पहले GROQ_API_KEY environment variable जोड़ें।",
     chatError: "अभी जवाब नहीं मिल पाया। कृपया थोड़ी देर बाद फिर कोशिश करें।",
   },
 };
@@ -144,7 +156,7 @@ const pointsTables = {
   ipl: {
     name: "IPL 2026",
     sport: "Cricket",
-    updated: "As on May 01, 2026, 11:58 PM IST",
+    updated: "Curated fallback table. Live standings are loading...",
     source: "https://sports.ndtv.com/ipl-2026/points-table",
     columns: ["#", "Team", "P", "W", "L", "NR", "Pts", "NRR"],
     rows: [
@@ -235,6 +247,8 @@ const chatForm = document.querySelector("#chatForm");
 const chatInput = document.querySelector("#chatInput");
 const chatMessages = document.querySelector("#chatMessages");
 const chatStatus = document.querySelector("#chatStatus");
+const voiceButton = document.querySelector("#voiceButton");
+const speakToggle = document.querySelector("#speakToggle");
 
 let stories = [...fallbackStories];
 let categories = [...defaultCategories];
@@ -243,6 +257,8 @@ let activeTable = "ipl";
 let activeView = "news";
 let activeLanguage = "en";
 let isLoading = false;
+let speakAnswers = true;
+let recognition = null;
 
 function t(key) {
   return translations[activeLanguage][key] || translations.en[key] || key;
@@ -256,7 +272,11 @@ function applyLanguage() {
   document.querySelectorAll("[data-i18n-placeholder]").forEach((element) => {
     element.placeholder = t(element.dataset.i18nPlaceholder);
   });
+  document.querySelectorAll("[data-i18n-title]").forEach((element) => {
+    element.title = t(element.dataset.i18nTitle);
+  });
   document.querySelector(".language-select span").textContent = t("language");
+  speakToggle.textContent = speakAnswers ? t("voiceOn") : t("voiceOff");
   renderNews();
   renderLiveSummary();
 }
@@ -273,6 +293,15 @@ function escapeHtml(value = "") {
         "'": "&#039;",
       })[character],
   );
+}
+
+function getSafeExternalUrl(value = "") {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.href : "#";
+  } catch (error) {
+    return "#";
+  }
 }
 
 function timeAgo(dateValue) {
@@ -383,7 +412,8 @@ function renderLead(story) {
 
   const storyTime = `${formatStoryTime(story.publishedAt)} (${story.time})`;
   const sourceLine = `${escapeHtml(story.source)} &middot; ${escapeHtml(storyTime)}`;
-  const safeUrl = story.url && story.url !== "#" ? escapeHtml(story.url) : "#";
+  const safeUrl = getSafeExternalUrl(story.url);
+  const escapedUrl = escapeHtml(safeUrl);
 
   leadStory.innerHTML = `
     <span class="category-tag">${escapeHtml(story.category)}</span>
@@ -394,8 +424,8 @@ function renderLead(story) {
       <span>${sourceLine}</span>
     </div>
     <div class="story-actions">
-      <a class="primary-action" href="${safeUrl}" target="_blank" rel="noopener">Read full story</a>
-      <a class="secondary-action" href="${safeUrl}" target="_blank" rel="noopener">Open source</a>
+      <a class="primary-action external-story-link" href="${escapedUrl}" data-url="${escapedUrl}" target="_blank" rel="noopener noreferrer">Read full story</a>
+      <a class="secondary-action external-story-link" href="${escapedUrl}" data-url="${escapedUrl}" target="_blank" rel="noopener noreferrer">Open source</a>
     </div>
   `;
 }
@@ -412,11 +442,12 @@ function renderNews() {
   } else {
     remainingStories.forEach((story) => {
       const card = document.createElement("article");
-      const safeUrl = story.url && story.url !== "#" ? escapeHtml(story.url) : "#";
+      const safeUrl = getSafeExternalUrl(story.url);
+      const escapedUrl = escapeHtml(safeUrl);
       card.className = "news-card";
       card.innerHTML = `
         <span class="category-tag">${escapeHtml(story.category)}</span>
-        <h3><a href="${safeUrl}" target="_blank" rel="noopener">${escapeHtml(story.title)}</a></h3>
+        <h3><a class="external-story-link" href="${escapedUrl}" data-url="${escapedUrl}" target="_blank" rel="noopener noreferrer">${escapeHtml(story.title)}</a></h3>
         <p>${escapeHtml(story.summary)}</p>
         <footer class="meta-line">
           <span>${escapeHtml(story.source)}</span>
@@ -557,6 +588,48 @@ function appendChatMessage(role, text) {
   return message;
 }
 
+function getPreferredVoice() {
+  const voices = window.speechSynthesis?.getVoices?.() || [];
+  const preferredLang = activeLanguage === "hi" ? "hi-IN" : "en-IN";
+  return (
+    voices.find((voice) => voice.lang === preferredLang) ||
+    voices.find((voice) => voice.lang?.toLowerCase().startsWith(preferredLang.toLowerCase())) ||
+    voices.find((voice) => voice.lang === "en-IN") ||
+    voices.find((voice) => voice.lang?.startsWith(activeLanguage === "hi" ? "hi" : "en")) ||
+    voices[0]
+  );
+}
+
+function speakText(text) {
+  if (!speakAnswers || !("speechSynthesis" in window)) {
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = activeLanguage === "hi" ? "hi-IN" : "en-IN";
+  utterance.rate = 0.92;
+  utterance.pitch = 1;
+  const voice = getPreferredVoice();
+  if (voice) {
+    utterance.voice = voice;
+  }
+  window.speechSynthesis.speak(utterance);
+}
+
+function getRecognition() {
+  const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!Recognition) {
+    return null;
+  }
+
+  const instance = new Recognition();
+  instance.lang = activeLanguage === "hi" ? "hi-IN" : "en-IN";
+  instance.interimResults = false;
+  instance.maxAlternatives = 1;
+  return instance;
+}
+
 function renderWelcomeMessage() {
   chatMessages.innerHTML = "";
   appendChatMessage(
@@ -581,6 +654,9 @@ function renderTableTabs() {
 
 function renderPointsTable() {
   const table = pointsTables[activeTable];
+  if (!table) {
+    return;
+  }
   activeTableTitle.textContent = table.name;
   activeTableMeta.textContent = `${table.sport} | ${table.updated}`;
   tableSourceLink.href = table.source;
@@ -600,6 +676,27 @@ function renderPointsTable() {
     `,
     )
     .join("");
+}
+
+async function loadPointsTables() {
+  try {
+    const response = await fetch("/api/standings");
+    if (!response.ok) {
+      return;
+    }
+
+    const payload = await response.json();
+    if (payload.tables && typeof payload.tables === "object") {
+      Object.assign(pointsTables, payload.tables);
+      renderTableTabs();
+      renderPointsTable();
+      if (payload.errors?.length && activeTableTitle.textContent) {
+        activeTableMeta.textContent = `${activeTableMeta.textContent} | Live refresh issue`;
+      }
+    }
+  } catch (error) {
+    // Keep curated fallback standings if live standings cannot be refreshed.
+  }
 }
 
 categoryButtons.forEach((button) => {
@@ -639,6 +736,21 @@ tableTabs.addEventListener("click", (event) => {
   activeTable = button.dataset.table;
   renderTableTabs();
   renderPointsTable();
+});
+
+document.addEventListener("click", (event) => {
+  const link = event.target.closest(".external-story-link");
+  if (!link) {
+    return;
+  }
+
+  const safeUrl = getSafeExternalUrl(link.dataset.url || link.href);
+  if (safeUrl === "#") {
+    event.preventDefault();
+    return;
+  }
+
+  link.href = safeUrl;
 });
 
 searchInput.addEventListener("input", renderNews);
@@ -691,7 +803,11 @@ chatForm.addEventListener("submit", async (event) => {
     } else if (!response.ok) {
       pending.querySelector("p").textContent = payload.error || t("chatError");
     } else {
-      pending.querySelector("p").textContent = payload.answer || t("chatError");
+      const answer = payload.answer || t("chatError");
+      pending.querySelector("p").textContent = payload.usedWebSearch && payload.searchProvider
+        ? `${answer}\n\nSearch: ${payload.searchProvider}`
+        : answer;
+      speakText(answer);
     }
   } catch (error) {
     pending.querySelector("p").textContent = t("chatError");
@@ -699,6 +815,42 @@ chatForm.addEventListener("submit", async (event) => {
     chatStatus.textContent = t("chatReady");
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
+});
+
+voiceButton.addEventListener("click", () => {
+  recognition = getRecognition();
+  if (!recognition) {
+    chatStatus.textContent = t("voiceUnsupported");
+    return;
+  }
+
+  chatStatus.textContent = t("listening");
+  voiceButton.classList.add("listening");
+  recognition.start();
+
+  recognition.addEventListener("result", (event) => {
+    const transcript = event.results?.[0]?.[0]?.transcript || "";
+    chatInput.value = transcript;
+    chatInput.focus();
+  });
+
+  recognition.addEventListener("end", () => {
+    voiceButton.classList.remove("listening");
+    chatStatus.textContent = t("chatReady");
+  });
+
+  recognition.addEventListener("error", () => {
+    voiceButton.classList.remove("listening");
+    chatStatus.textContent = t("voiceUnsupported");
+  });
+});
+
+speakToggle.addEventListener("click", () => {
+  speakAnswers = !speakAnswers;
+  if (!speakAnswers && "speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+  }
+  speakToggle.textContent = speakAnswers ? t("voiceOn") : t("voiceOff");
 });
 
 function updateClock() {
@@ -712,6 +864,7 @@ renderTrending();
 renderLiveSummary();
 renderTableTabs();
 renderPointsTable();
+loadPointsTables();
 renderWelcomeMessage();
 syncCategoryButtons();
 updateTicker();
